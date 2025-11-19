@@ -1,0 +1,240 @@
+{
+  "name": "Intesis AC",
+  "type": "com.fibaro.hvacSystemCool",
+  "apiVersion": "1.3",
+  "initialProperties": {
+    "viewLayout": {
+      "$jason": {
+        "body": {
+          "header": {
+            "style": {
+              "height": "0"
+            },
+            "title": "quickApp_device"
+          },
+          "sections": {
+            "items": [
+              {
+                "components": [
+                  {
+                    "name": "buttonVane",
+                    "style": {
+                      "weight": "1.2"
+                    },
+                    "text": "Vane",
+                    "type": "button",
+                    "visible": true
+                  },
+                  {
+                    "style": {
+                      "weight": "0.5"
+                    },
+                    "type": "space"
+                  }
+                ],
+                "style": {
+                  "weight": "1.2"
+                },
+                "type": "vertical"
+              },
+              {
+                "components": [
+                  {
+                    "name": "buttonFanSp",
+                    "style": {
+                      "weight": "1.2"
+                    },
+                    "text": "Fan",
+                    "type": "button",
+                    "visible": true
+                  },
+                  {
+                    "style": {
+                      "weight": "0.5"
+                    },
+                    "type": "space"
+                  }
+                ],
+                "style": {
+                  "weight": "1.2"
+                },
+                "type": "vertical"
+              }
+            ]
+          }
+        },
+        "head": {
+          "title": "quickApp_device"
+        }
+      }
+    },
+    "uiView": [
+      {
+        "components": [
+          {
+            "eventBinding": {
+              "onLongPressDown": [
+                {
+                  "params": {
+                    "actionName": "UIAction",
+                    "args": [
+                      "onLongPressDown",
+                      "buttonVane"
+                    ]
+                  },
+                  "type": "deviceAction"
+                }
+              ],
+              "onLongPressReleased": [
+                {
+                  "params": {
+                    "actionName": "UIAction",
+                    "args": [
+                      "onLongPressReleased",
+                      "buttonVane"
+                    ]
+                  },
+                  "type": "deviceAction"
+                }
+              ],
+              "onReleased": [
+                {
+                  "params": {
+                    "actionName": "UIAction",
+                    "args": [
+                      "onReleased",
+                      "buttonVane"
+                    ]
+                  },
+                  "type": "deviceAction"
+                }
+              ]
+            },
+            "name": "buttonVane",
+            "style": {
+              "weight": "1.0"
+            },
+            "text": "Vane",
+            "type": "button",
+            "visible": true
+          }
+        ],
+        "style": {
+          "weight": "1.0"
+        },
+        "type": "horizontal"
+      },
+      {
+        "components": [
+          {
+            "eventBinding": {
+              "onLongPressDown": [
+                {
+                  "params": {
+                    "actionName": "UIAction",
+                    "args": [
+                      "onLongPressDown",
+                      "buttonFanSp"
+                    ]
+                  },
+                  "type": "deviceAction"
+                }
+              ],
+              "onLongPressReleased": [
+                {
+                  "params": {
+                    "actionName": "UIAction",
+                    "args": [
+                      "onLongPressReleased",
+                      "buttonFanSp"
+                    ]
+                  },
+                  "type": "deviceAction"
+                }
+              ],
+              "onReleased": [
+                {
+                  "params": {
+                    "actionName": "UIAction",
+                    "args": [
+                      "onReleased",
+                      "buttonFanSp"
+                    ]
+                  },
+                  "type": "deviceAction"
+                }
+              ]
+            },
+            "name": "buttonFanSp",
+            "style": {
+              "weight": "1.0"
+            },
+            "text": "Fan",
+            "type": "button",
+            "visible": true
+          }
+        ],
+        "style": {
+          "weight": "1.0"
+        },
+        "type": "horizontal"
+      }
+    ],
+    "useUiView": true,
+    "uiCallbacks": [
+      {
+        "callback": "onChangeVane",
+        "eventType": "onReleased",
+        "name": "buttonVane"
+      },
+      {
+        "callback": "",
+        "eventType": "onLongPressDown",
+        "name": "buttonVane"
+      },
+      {
+        "callback": "",
+        "eventType": "onLongPressReleased",
+        "name": "buttonVane"
+      },
+      {
+        "callback": "onChangeFanSp",
+        "eventType": "onReleased",
+        "name": "buttonFanSp"
+      },
+      {
+        "callback": "",
+        "eventType": "onLongPressDown",
+        "name": "buttonFanSp"
+      },
+      {
+        "callback": "",
+        "eventType": "onLongPressReleased",
+        "name": "buttonFanSp"
+      }
+    ],
+    "quickAppVariables": [
+      {
+        "name": "IP",
+        "type": "string",
+        "value": ""
+      },
+      {
+        "name": "Port",
+        "type": "string",
+        "value": "3310"
+      }
+    ],
+    "typeTemplateInitialized": true,
+    "userDescription": ""
+  },
+  "initialInterfaces": [],
+  "files": [
+    {
+      "name": "main",
+      "isMain": true,
+      "isOpen": true,
+      "content": "-- Thermostat cool should handle actions: setThermostatMode, setCoolingThermostatSetpoint\n-- Proeprties that should be updated:\n-- * supportedThermostatModes - array of modes supported by the thermostat eg. {\"Off\", \"Cool\"}\n-- * thermostatMode - current mode of the thermostat\n-- * coolingThermostatSetpoint - set point for cooling, supported units: \"C\" - Celsius, \"F\" - Fahrenheit\n\nfunction QuickApp:setThermostatMode(mode)\n  if mode == \"Off\" then\n    self:sendCommand(\"SET,1:ONOFF,OFF\")\n  else\n    self:sendCommand(\"SET,1:MODE,\" .. mode:upper())\n    self:sendCommand(\"SET,1:ONOFF,ON\")\n  end\nend\n\nfunction QuickApp:setCoolingThermostatSetpoint(value, _unit)\n  self:sendCommand(\"SET,1:SETPTEMP,\" .. math.floor(10 * value))\nend\n\nfunction QuickApp:onChangeVane()\n  if self.lastVane == \"AUTO\" then\n    self:sendCommand(\"SET,1:VANEUD,SWING\")\n  elseif self.lastVane == \"SWING\" then\n    self:sendCommand(\"SET,1:VANEUD,AUTO\")\n  end\nend\n\nfunction QuickApp:onChangeFanSpeed()\n  if self.lastFanSpeed == \"AUTO\" then\n    self:sendCommand(\"SET,1:FANSP,4\")\n  elseif self.lastFanSpeed == \"4\" then\n    self:sendCommand(\"SET,1:FANSP,3\")\n  elseif self.lastFanSpeed == \"3\" then\n    self:sendCommand(\"SET,1:FANSP,2\")\n  elseif self.lastFanSpeed == \"2\" then\n    self:sendCommand(\"SET,1:FANSP,1\")\n  elseif self.lastFanSpeed == \"1\" then\n    self:sendCommand(\"SET,1:FANSP,AUTO\")\n  end\nend\n\nfunction QuickApp:wakeUpDeadDevice()\n  self:connect()\nend\n\n-- To update controls you can use method self:updateView(<component ID>, <component property>, <desired value>). Eg:  \n-- self:updateView(\"slider\", \"value\", \"55\") \n-- self:updateView(\"button1\", \"text\", \"MUTE\") \n-- self:updateView(\"label\", \"text\", \"TURNED ON\") \n\n-- This is QuickApp inital method. It is called right after your QuickApp starts (after each save or on gateway startup). \n-- Here you can set some default values, setup http connection or get QuickApp variables.\n-- To learn more, please visit: \n--    * https://manuals.fibaro.com/home-center-3/\n--    * https://manuals.fibaro.com/home-center-3-quick-apps/\n\nlocal CONNECT_TIMEOUT_SEC  = 30\nlocal PING_EVERY_SEC       = 10\nlocal RECONNECT_SEC        = 30\n\nfunction QuickApp:onInit()\n  self:updateProperty(\"supportedThermostatModes\", {\"Cool\", \"Fan\", \"Dry\", \"Heat\", \"Auto\", \"Off\"})\n  self:updateProperty(\"coolingThermostatSetpointCapabilitiesMin\", 18)\n  self:updateProperty(\"coolingThermostatSetpointCapabilitiesMax\", 30)\n  self:updateProperty(\"coolingThermostatSetpointStep\", {C = 1.0})\n\n  self.ip = self:getVariable(\"IP\")\n  self.port = tonumber(self:getVariable(\"Port\"))\n\n  self:connect()\nend\n\nfunction QuickApp:connect()\n  self:resetState()\n\n  if not self.ip or not self.port then\n    self:warning(\"Set QuickApp variables IP and Port\")\n    return\n  end\n\n  self:debug(string.format(\"Connecting to %s:%d...\", self.ip, self.port))\n  self.socket = net.TCPSocket({timeout = CONNECT_TIMEOUT_SEC * 1000});\n\n  self.socket:connect(self.ip, self.port, {\n    success = function()\n      self:debug(\"TCP connected\")\n      self:updateProperty(\"dead\", false)\n      self.connected = true\n\n      self:startReader()\n      self:startPinger()\n\n      self:sendCommand(\"ID\")\n      self:sendCommand(\"CFG:DATETIME,\" .. os.date(\"%d/%m/%Y %H:%M:%S\"))\n      self:sendCommand(\"GET,1:MODE\")\n      self:sendCommand(\"GET,1:SETPTEMP\")\n      self:sendCommand(\"GET,1:VANEUD\")\n      self:sendCommand(\"GET,1:FANSP\")\n      self:sendCommand(\"GET,1:ONOFF\")\n    end,\n    error = function(message)\n      self:warning(\"TCP connect failed: \" .. message)\n      return self:scheduleReconnect()\n    end\n  })\nend\n\nfunction QuickApp:resetState()\n  self:updateProperty(\"dead\", true)\n\n  if self.socket then\n    self.socket:close()\n  end\n  self.socket = nil\n  self.connected = false\n  self.lastSendTime = 0\n\n  if self.pingTimer then\n    clearInterval(self.pingTimer)\n  end\n  self.pingTimer = nil\n  if self.reconnectTimer then\n    clearInterval(self.reconnectTimer)\n  end\n  self.reconnectTimer = nil\n\n  self.waitingForResponse = false\n  self.queue = {}\n  self.lastMode = \"Cool\"\n  self.lastVane = \"AUTO\"\n  self.lastFanSpeed = \"AUTO\"\nend\n\nfunction QuickApp:scheduleReconnect()\n  self:resetState()\n  self:warning(string.format(\"Reconnecting in %ds...\", RECONNECT_SEC))\n\n  self.reconnectTimer = setTimeout(function()\n    self.reconnectTimer = nil\n    self:connect()\n  end, RECONNECT_SEC * 1000)\nend\n\nfunction QuickApp:startReader()\n  self.socket:readUntil(\"\\r\\n\", {\n    success = function(data)\n      self:debug(\"<-- \" .. data)\n      self:handleIncoming(data)\n      self:startReader()\n    end,\n    error = function(message)\n      self:warning(\"Socket read error: \" .. message)\n      self:scheduleReconnect()\n    end\n  })\nend\n\nfunction QuickApp:startPinger()\n  if self.pingTimer then\n    clearInterval(self.pingTimer)\n  end\n\n  self.pingTimer = setInterval(function()\n    if os.time() - self.lastSendTime >= PING_EVERY_SEC then\n      self:sendCommand(\"PING\")\n    end\n  end, PING_EVERY_SEC * 1000)\nend\n\nlocal function firstToUpper(str)\n  return str:sub(1, 1):upper() .. str:sub(2):lower()\nend\n\nfunction QuickApp:handleIncoming(data)\n  if data == \"CHN,1:MODE,COOL\" then\n    self.lastMode = \"Cool\"\n    self:updateProperty(\"thermostatMode\", \"Cool\")\n  elseif data == \"CHN,1:MODE,FAN\" then\n    self.lastMode = \"Fan\"\n    self:updateProperty(\"thermostatMode\", \"Fan\")\n  elseif data == \"CHN,1:MODE,DRY\" then\n    self.lastMode = \"Dry\"\n    self:updateProperty(\"thermostatMode\", \"Dry\")\n  elseif data == \"CHN,1:MODE,HEAT\" then\n    self.lastMode = \"Heat\"\n    self:updateProperty(\"thermostatMode\", \"Heat\")\n  elseif data == \"CHN,1:MODE,AUTO\" then\n    self.lastMode = \"Auto\"\n    self:updateProperty(\"thermostatMode\", \"Auto\")\n  elseif data == \"CHN,1:ONOFF,OFF\" then\n    self:updateProperty(\"thermostatMode\", \"Off\")\n  elseif data == \"CHN,1:ONOFF,ON\" then\n    self:updateProperty(\"thermostatMode\", self.lastMode)\n  elseif data:starts(\"CHN,1:VANEUD,\") then\n    local _, e = data:find(\"CHN,1:VANEUD,\", 1, true)\n    local mode = data:sub(e+1)\n    self.lastVane = mode\n    self:updateView(\"buttonVane\", \"text\", \"Vane: \" .. firstToUpper(mode))\n  elseif data:starts(\"CHN,1:FANSP,\") then\n    local _, e = data:find(\"CHN,1:FANSP,\", 1, true)\n    local speed = data:sub(e+1)\n    self.lastFanSpeed = speed\n    self:updateView(\"buttonFanSp\", \"text\", \"Fan: \" .. firstToUpper(speed))\n  elseif data:starts(\"CHN,1:SETPTEMP,\") then\n    local _, e = data:find(\"CHN,1:SETPTEMP,\", 1, true)\n    local temp = tonumber(data:sub(e+1))\n    if temp ~= 32768 then\n      self:updateProperty(\"coolingThermostatSetpoint\", {value = temp // 10, unit = \"C\"})\n    end\n  end\n\n  self.waitingForResponse = false\n  local payload = table.remove(self.queue, 1)\n  if payload then\n    self:sendRaw(payload)\n  end\nend\n\nfunction QuickApp:sendRaw(payload)\n  self.socket:write(payload .. \"\\r\\n\", {\n    success = function()\n      self:debug(\"--> \" .. payload)\n      self.lastSendTime = os.time()\n    end,\n    error = function(message)\n      self:warning(\"Socket write error: \" .. message)\n      self:scheduleReconnect()\n    end\n  })\nend\n\nfunction QuickApp:sendCommand(payload)\n  if not self.connected then\n    self:warning(\"Not connected, cannot send\")\n    return\n  end\n\n  if not self.waitingForResponse then\n    self:sendRaw(payload)\n    self.waitingForResponse = true\n  else\n    table.insert(self.queue, payload)\n  end\nend\n"
+    }
+  ]
+}

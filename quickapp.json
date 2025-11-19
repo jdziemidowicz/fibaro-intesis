@@ -1,0 +1,239 @@
+{
+  "name": "Intesis AC",
+  "type": "com.fibaro.hvacSystemCool",
+  "apiVersion": "1.3",
+  "initialProperties": {
+    "viewLayout": {
+      "$jason": {
+        "body": {
+          "header": {
+            "style": {
+              "height": "0"
+            },
+            "title": "quickApp_device"
+          },
+          "sections": {
+            "items": [
+              {
+                "components": [
+                  {
+                    "name": "buttonVane",
+                    "style": {
+                      "weight": "1.2"
+                    },
+                    "text": "Vane",
+                    "type": "button",
+                    "visible": true
+                  },
+                  {
+                    "style": {
+                      "weight": "0.5"
+                    },
+                    "type": "space"
+                  }
+                ],
+                "style": {
+                  "weight": "1.2"
+                },
+                "type": "vertical"
+              },
+              {
+                "components": [
+                  {
+                    "name": "buttonFanSp",
+                    "style": {
+                      "weight": "1.2"
+                    },
+                    "text": "Fan",
+                    "type": "button",
+                    "visible": true
+                  },
+                  {
+                    "style": {
+                      "weight": "0.5"
+                    },
+                    "type": "space"
+                  }
+                ],
+                "style": {
+                  "weight": "1.2"
+                },
+                "type": "vertical"
+              }
+            ]
+          }
+        },
+        "head": {
+          "title": "quickApp_device"
+        }
+      }
+    },
+    "uiView": [
+      {
+        "components": [
+          {
+            "eventBinding": {
+              "onLongPressDown": [
+                {
+                  "params": {
+                    "actionName": "UIAction",
+                    "args": [
+                      "onLongPressDown",
+                      "buttonVane"
+                    ]
+                  },
+                  "type": "deviceAction"
+                }
+              ],
+              "onLongPressReleased": [
+                {
+                  "params": {
+                    "actionName": "UIAction",
+                    "args": [
+                      "onLongPressReleased",
+                      "buttonVane"
+                    ]
+                  },
+                  "type": "deviceAction"
+                }
+              ],
+              "onReleased": [
+                {
+                  "params": {
+                    "actionName": "UIAction",
+                    "args": [
+                      "onReleased",
+                      "buttonVane"
+                    ]
+                  },
+                  "type": "deviceAction"
+                }
+              ]
+            },
+            "name": "buttonVane",
+            "style": {
+              "weight": "1.0"
+            },
+            "text": "Vane",
+            "type": "button",
+            "visible": true
+          }
+        ],
+        "style": {
+          "weight": "1.0"
+        },
+        "type": "horizontal"
+      },
+      {
+        "components": [
+          {
+            "eventBinding": {
+              "onLongPressDown": [
+                {
+                  "params": {
+                    "actionName": "UIAction",
+                    "args": [
+                      "onLongPressDown",
+                      "buttonFanSp"
+                    ]
+                  },
+                  "type": "deviceAction"
+                }
+              ],
+              "onLongPressReleased": [
+                {
+                  "params": {
+                    "actionName": "UIAction",
+                    "args": [
+                      "onLongPressReleased",
+                      "buttonFanSp"
+                    ]
+                  },
+                  "type": "deviceAction"
+                }
+              ],
+              "onReleased": [
+                {
+                  "params": {
+                    "actionName": "UIAction",
+                    "args": [
+                      "onReleased",
+                      "buttonFanSp"
+                    ]
+                  },
+                  "type": "deviceAction"
+                }
+              ]
+            },
+            "name": "buttonFanSp",
+            "style": {
+              "weight": "1.0"
+            },
+            "text": "Fan",
+            "type": "button",
+            "visible": true
+          }
+        ],
+        "style": {
+          "weight": "1.0"
+        },
+        "type": "horizontal"
+      }
+    ],
+    "useUiView": true,
+    "uiCallbacks": [
+      {
+        "callback": "onChangeVane",
+        "eventType": "onReleased",
+        "name": "buttonVane"
+      },
+      {
+        "callback": "",
+        "eventType": "onLongPressDown",
+        "name": "buttonVane"
+      },
+      {
+        "callback": "",
+        "eventType": "onLongPressReleased",
+        "name": "buttonVane"
+      },
+      {
+        "callback": "onChangeFanSp",
+        "eventType": "onReleased",
+        "name": "buttonFanSp"
+      },
+      {
+        "callback": "",
+        "eventType": "onLongPressDown",
+        "name": "buttonFanSp"
+      },
+      {
+        "callback": "",
+        "eventType": "onLongPressReleased",
+        "name": "buttonFanSp"
+      }
+    ],
+    "quickAppVariables": [
+      {
+        "name": "IP",
+        "type": "string",
+        "value": ""
+      },
+      {
+        "name": "Port",
+        "type": "string",
+        "value": "3310"
+      }
+    ],
+    "typeTemplateInitialized": true,
+    "userDescription": ""
+  },
+  "initialInterfaces": [],
+  "files": [
+    {
+      "name": "main",
+      "isMain": true,
+      "isOpen": true
+    }
+  ]
+}
