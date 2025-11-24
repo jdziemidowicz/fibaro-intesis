@@ -212,7 +212,7 @@ function QuickApp:handleIncoming(data)
   self.waitingForResponse = false
   local payload = table.remove(self.queue, 1)
   if payload then
-    self:sendRaw(payload)
+    self:sendCommand(payload)
   end
 end
 
