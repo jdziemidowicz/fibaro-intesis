@@ -160,10 +160,15 @@ function QuickApp:startPinger()
     hub.clearTimeout(self.pingTimer)
   end
 
+  self:pingLoop()
+end
+
+function QuickApp:pingLoop()
   self.pingTimer = hub.setTimeout(PING_EVERY_SEC * 1000, function()
     if os.time() - self.lastSendTime >= PING_EVERY_SEC then
       self:sendCommand("PING")
     end
+    self:pingLoop()
   end)
 end
 
