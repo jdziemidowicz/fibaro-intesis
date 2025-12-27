@@ -116,11 +116,11 @@ function QuickApp:resetState()
   self.lastSendTime = 0
 
   if self.pingTimer then
-    clearInterval(self.pingTimer)
+    hub.clearTimeout(self.pingTimer)
   end
   self.pingTimer = nil
   if self.reconnectTimer then
-    clearInterval(self.reconnectTimer)
+    hub.clearTimeout(self.reconnectTimer)
   end
   self.reconnectTimer = nil
 
@@ -135,10 +135,10 @@ function QuickApp:scheduleReconnect()
   self:resetState()
   self:warning(string.format("Reconnecting in %ds...", RECONNECT_SEC))
 
-  self.reconnectTimer = setTimeout(function()
+  self.reconnectTimer = hub.setTimeout(RECONNECT_SEC * 1000, function()
     self.reconnectTimer = nil
     self:connect()
-  end, RECONNECT_SEC * 1000)
+  end)
 end
 
 function QuickApp:startReader()
@@ -157,14 +157,14 @@ end
 
 function QuickApp:startPinger()
   if self.pingTimer then
-    clearInterval(self.pingTimer)
+    hub.clearTimeout(self.pingTimer)
   end
 
-  self.pingTimer = setInterval(function()
+  self.pingTimer = hub.setTimeout(PING_EVERY_SEC * 1000, function()
     if os.time() - self.lastSendTime >= PING_EVERY_SEC then
       self:sendCommand("PING")
     end
-  end, PING_EVERY_SEC * 1000)
+  end)
 end
 
 local function firstToUpper(str)
