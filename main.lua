@@ -74,7 +74,7 @@ function QuickApp:connect()
   self:resetState()
 
   if not self.ip or not self.port then
-    self:warning("Set QuickApp variables IP and Port")
+    self:error("Set QuickApp variables IP and Port")
     return
   end
 
