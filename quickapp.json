@@ -218,11 +218,6 @@
         "name": "IP",
         "type": "string",
         "value": ""
-      },
-      {
-        "name": "Port",
-        "type": "string",
-        "value": "3310"
       }
     ],
     "typeTemplateInitialized": true,

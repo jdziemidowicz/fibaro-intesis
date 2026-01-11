@@ -57,6 +57,7 @@ end
 local CONNECT_TIMEOUT_SEC  = 30
 local PING_EVERY_SEC       = 10
 local RECONNECT_SEC        = 30
+local WMP_PORT             = 3310
 
 function QuickApp:onInit()
   self:updateProperty("supportedThermostatModes", {"Cool", "Fan", "Dry", "Heat", "Auto", "Off"})
@@ -65,7 +66,6 @@ function QuickApp:onInit()
   self:updateProperty("coolingThermostatSetpointStep", {C = 1.0})
 
   self.ip = self:getVariable("IP")
-  self.port = tonumber(self:getVariable("Port"))
 
   self:connect()
 end
@@ -73,15 +73,15 @@ end
 function QuickApp:connect()
   self:resetState()
 
-  if not self.ip or not self.port then
-    self:error("Set QuickApp variables IP and Port")
+  if not self.ip then
+    self:error("Set QuickApp variables: IP")
     return
   end
 
-  self:debug(string.format("Connecting to %s:%d...", self.ip, self.port))
+  self:debug(string.format("Connecting to %s:%d...", self.ip, WMP_PORT))
   self.socket = net.TCPSocket({timeout = CONNECT_TIMEOUT_SEC * 1000});
 
-  self.socket:connect(self.ip, self.port, {
+  self.socket:connect(self.ip, WMP_PORT, {
     success = function()
       self:debug("TCP connected")
       self:updateProperty("dead", false)
