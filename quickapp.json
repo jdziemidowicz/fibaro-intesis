@@ -218,7 +218,12 @@
         "name": "IP",
         "type": "string",
         "value": ""
-      }
+      },
+      {
+        "name": "PIN",
+        "type": "password",
+        "value": ""
+      },
     ],
     "typeTemplateInitialized": true,
     "userDescription": ""
