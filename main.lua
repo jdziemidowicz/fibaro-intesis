@@ -88,21 +88,25 @@ function QuickApp:connect()
       self.connected = true
 
       self:sendCommand("ID")
-      self:sendCommand("CFG:DATETIME," .. os.date("%d/%m/%Y %H:%M:%S"))
-      self:sendCommand("GET,1:MODE")
-      self:sendCommand("GET,1:SETPTEMP")
-      self:sendCommand("GET,1:VANEUD")
-      self:sendCommand("GET,1:FANSP")
-      self:sendCommand("GET,1:ONOFF")
 
       self:startReader()
-      self:startPinger()
     end,
     error = function(message)
       self:warning("TCP connect failed: " .. message)
       return self:scheduleReconnect()
     end
   })
+end
+
+function QuickApp:doLogin()
+  self:sendCommand("CFG:DATETIME," .. os.date("%d/%m/%Y %H:%M:%S"))
+  self:sendCommand("GET,1:MODE")
+  self:sendCommand("GET,1:SETPTEMP")
+  self:sendCommand("GET,1:VANEUD")
+  self:sendCommand("GET,1:FANSP")
+  self:sendCommand("GET,1:ONOFF")
+
+  self:startPinger()
 end
 
 function QuickApp:resetState()
@@ -129,6 +133,7 @@ function QuickApp:resetState()
   self.lastMode = "Cool"
   self.lastVane = "AUTO"
   self.lastFanSpeed = "AUTO"
+  self.mac = nil
 end
 
 function QuickApp:scheduleReconnect()
@@ -225,6 +230,10 @@ function QuickApp:handleIncoming(data)
     if temp ~= 32768 then
       self:updateProperty("coolingThermostatSetpoint", {value = temp // 10, unit = "C"})
     end
+  elseif data:starts("ID:") then
+    local comma = data:find(",")
+    self.mac = data:sub(comma + 1, comma + 12)
+    self:doLogin()
   end
 end
 
