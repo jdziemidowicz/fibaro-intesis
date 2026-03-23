@@ -43,14 +43,14 @@ function QuickApp:wakeUpDeadDevice()
   self:connect()
 end
 
--- To update controls you can use method self:updateView(<component ID>, <component property>, <desired value>). Eg:  
--- self:updateView("slider", "value", "55") 
--- self:updateView("button1", "text", "MUTE") 
--- self:updateView("label", "text", "TURNED ON") 
+-- To update controls you can use method self:updateView(<component ID>, <component property>, <desired value>). Eg:
+-- self:updateView("slider", "value", "55")
+-- self:updateView("button1", "text", "MUTE")
+-- self:updateView("label", "text", "TURNED ON")
 
--- This is QuickApp inital method. It is called right after your QuickApp starts (after each save or on gateway startup). 
+-- This is QuickApp inital method. It is called right after your QuickApp starts (after each save or on gateway startup).
 -- Here you can set some default values, setup http connection or get QuickApp variables.
--- To learn more, please visit: 
+-- To learn more, please visit:
 --    * https://manuals.fibaro.com/home-center-3/
 --    * https://manuals.fibaro.com/home-center-3-quick-apps/
 
@@ -87,9 +87,6 @@ function QuickApp:connect()
       self:updateProperty("dead", false)
       self.connected = true
 
-      self:startReader()
-      self:startPinger()
-
       self:sendCommand("ID")
       self:sendCommand("CFG:DATETIME," .. os.date("%d/%m/%Y %H:%M:%S"))
       self:sendCommand("GET,1:MODE")
@@ -97,6 +94,9 @@ function QuickApp:connect()
       self:sendCommand("GET,1:VANEUD")
       self:sendCommand("GET,1:FANSP")
       self:sendCommand("GET,1:ONOFF")
+
+      self:startReader()
+      self:startPinger()
     end,
     error = function(message)
       self:warning("TCP connect failed: " .. message)
@@ -142,11 +142,24 @@ function QuickApp:scheduleReconnect()
 end
 
 function QuickApp:startReader()
+  self:readSomething(function (data)
+    self:handleIncoming(data)
+    self:startReader()
+  end)
+end
+
+function QuickApp:readSomething(callback)
   self.socket:readUntil("\r\n", {
     success = function(data)
       self:debug("<-- " .. data)
-      self:handleIncoming(data)
-      self:startReader()
+
+      self.waitingForResponse = false
+      local payload = table.remove(self.queue, 1)
+      if payload then
+        self:sendCommand(payload)
+      end
+
+      callback(data)
     end,
     error = function(message)
       self:warning("Socket read error: " .. message)
@@ -212,12 +225,6 @@ function QuickApp:handleIncoming(data)
     if temp ~= 32768 then
       self:updateProperty("coolingThermostatSetpoint", {value = temp // 10, unit = "C"})
     end
-  end
-
-  self.waitingForResponse = false
-  local payload = table.remove(self.queue, 1)
-  if payload then
-    self:sendCommand(payload)
   end
 end
 
