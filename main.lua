@@ -60,12 +60,15 @@ local RECONNECT_SEC        = 30
 local WMP_PORT             = 3310
 
 function QuickApp:onInit()
+  math.randomseed(os.time())
+
   self:updateProperty("supportedThermostatModes", {"Cool", "Fan", "Dry", "Heat", "Auto", "Off"})
   self:updateProperty("coolingThermostatSetpointCapabilitiesMin", 18)
   self:updateProperty("coolingThermostatSetpointCapabilitiesMax", 30)
   self:updateProperty("coolingThermostatSetpointStep", {C = 1.0})
 
   self.ip = self:getVariable("IP")
+  self.pin = tonumber(self:getVariable("PIN"))
 
   self:connect()
 end
@@ -99,6 +102,19 @@ function QuickApp:connect()
 end
 
 function QuickApp:doLogin()
+  if self.pin then
+    local mac_int = tonumber(self.mac, 16)
+    self.K = derive_key(self.pin, mac_int)
+
+    self.r0 = random_bytes(8)
+    local MAGIC_LOGIN = "\xAB\xCD\xEF\x55\xAA\xFE\xDC\xBA"
+    self:sendCommand("LOGIN:" .. bytes_to_hex(aes_ecb_encrypt(self.r0 .. MAGIC_LOGIN, self.K)))
+  else
+    self:fetchState()
+  end
+end
+
+function QuickApp:fetchState()
   self:sendCommand("CFG:DATETIME," .. os.date("%d/%m/%Y %H:%M:%S"))
   self:sendCommand("GET,1:MODE")
   self:sendCommand("GET,1:SETPTEMP")
@@ -156,6 +172,13 @@ end
 function QuickApp:readSomething(callback)
   self.socket:readUntil("\r\n", {
     success = function(data)
+      if self.SK then
+        data = unescape(data)
+        data = aes_cbc_decrypt(data, self.SK, self.iv_rx)
+        local num2 = tonumber(data:sub(1, 4))
+        data = data:sub(6, 5 + num2 - 2)
+      end
+
       self:debug("<-- " .. data)
 
       self.waitingForResponse = false
@@ -214,6 +237,14 @@ function QuickApp:handleIncoming(data)
     self:updateProperty("thermostatMode", "Off")
   elseif data == "CHN,1:ONOFF,ON" then
     self:updateProperty("thermostatMode", self.lastMode)
+  elseif data == "OK" then
+    self.SK = self.r1 .. self.r2
+    self.iv_rx = { md5(self.r0) }
+
+    local r0_inc = {}
+    for i = 1, 8 do r0_inc[i] = (self.r0:byte(i) + 1) & 0xFF end
+    self.iv_tx = { md5(string.char(table.unpack(r0_inc))) }
+    self:fetchState()
   elseif data:starts("CHN,1:VANEUD,") then
     local _, e = data:find("CHN,1:VANEUD,", 1, true)
     local mode = data:sub(e+1)
@@ -234,11 +265,31 @@ function QuickApp:handleIncoming(data)
     local comma = data:find(",")
     self.mac = data:sub(comma + 1, comma + 12)
     self:doLogin()
+  elseif data:starts("M0:") then
+    local m0_plain = aes_ecb_decrypt(hex_to_bytes(data:sub(4)), self.K)
+    local MAGIC_M0 = "\xFE\xA5\x1B\x1E\x01\x23\x45\x67"
+    assert(m0_plain:sub(9, 16) == MAGIC_M0, "M0 magic mismatch: " .. bytes_to_hex(m0_plain:sub(9, 16)))
+    self.r1 = m0_plain:sub(1, 8)
+
+    self.r2 = random_bytes(8)
+    local MAGIC_M1 = "\x5A\xFE\xB0\xA7\xBE\xA1\xAF\xEA"
+    self:sendCommand("M1:" .. bytes_to_hex(aes_ecb_encrypt(self.r2 .. MAGIC_M1, self.K)))
   end
 end
 
 function QuickApp:sendRaw(payload)
-  self.socket:write(payload .. "\r\n", {
+  if self.SK then
+    local buf = payload .. "\n"
+    local inner = escape(buf, #buf - 1)
+    local array2 = ("%04d~"):format(#inner) .. inner
+    local cipher_out = aes_cbc_encrypt(array2, self.SK, self.iv_tx)
+    local outer = escape(cipher_out, #cipher_out)
+    data = outer .. "\n"
+  else
+    data = payload .. "\r\n"
+  end
+
+  self.socket:write(data, {
     success = function()
       self:debug("--> " .. payload)
       self.lastSendTime = os.time()

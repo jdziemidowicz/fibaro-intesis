@@ -211,7 +211,7 @@ function aes_ecb_decrypt(ciphertext, key)
 end
 
 -- AES-128-CBC encrypt (no PKCS7; input must be a multiple of 16 bytes)
-function _cbc_enc(plaintext, key, iv)
+local function _cbc_enc(plaintext, key, iv)
     local rk   = aes_key_expand(key)
     local out  = {}
     local prev = { iv:byte(1, 16) }
@@ -226,7 +226,7 @@ function _cbc_enc(plaintext, key, iv)
 end
 
 -- AES-128-CBC decrypt (no PKCS7; input must be a multiple of 16 bytes)
-function _cbc_dec(ciphertext, key, iv)
+local function _cbc_dec(ciphertext, key, iv)
     local rk   = aes_key_expand(key)
     local out  = {}
     local prev = { iv:byte(1, 16) }
@@ -238,4 +238,24 @@ function _cbc_dec(ciphertext, key, iv)
         prev = { blk:byte(1, 16) }
     end
     return table.concat(out)
+end
+
+local function increment_iv(iv)
+    -- iv[0]++ then iv = MD5(iv)
+    local b1 = ((iv:byte(1) + 1) & 0xFF)
+    return md5(string.char(b1) .. iv:sub(2))
+end
+
+function aes_cbc_encrypt(plaintext, key, iv_ref)
+    local cur_iv = iv_ref[1]
+    iv_ref[1] = increment_iv(cur_iv)
+    local pad = (-#plaintext) % 16
+    if pad > 0 then plaintext = plaintext .. ("\0"):rep(pad) end
+    return _cbc_enc(plaintext, key, cur_iv)
+end
+
+function aes_cbc_decrypt(ciphertext, key, iv_ref)
+    local cur_iv = iv_ref[1]
+    iv_ref[1] = increment_iv(cur_iv)
+    return _cbc_dec(ciphertext, key, cur_iv)
 end
