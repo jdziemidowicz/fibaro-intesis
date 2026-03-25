@@ -223,7 +223,7 @@
         "name": "PIN",
         "type": "password",
         "value": ""
-      },
+      }
     ],
     "typeTemplateInitialized": true,
     "userDescription": ""
@@ -234,6 +234,21 @@
       "name": "main",
       "isMain": true,
       "isOpen": true
+    },
+    {
+      "name": "md5",
+      "isMain": false,
+      "isOpen": false
+    },
+    {
+      "name": "aes",
+      "isMain": false,
+      "isOpen": false
+    },
+    {
+      "name": "pin",
+      "isMain": false,
+      "isOpen": false
     }
   ]
 }
