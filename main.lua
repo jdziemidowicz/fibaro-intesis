@@ -78,7 +78,7 @@ end
 function QuickApp:connect()
   self:resetState()
 
-  if not self.ip then
+  if self.ip == "" then
     self:error("Set QuickApp variables: IP")
     return
   end
