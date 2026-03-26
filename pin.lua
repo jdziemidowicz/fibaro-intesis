@@ -40,6 +40,8 @@ function hex_to_bytes(h)
 end
 
 function random_bytes(n)
+    math.randomseed(os.time())
+
     local bytes = ""
     for i = 1, n do
         bytes = bytes .. string.char(math.random(0, 255))

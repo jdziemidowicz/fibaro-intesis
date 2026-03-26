@@ -241,7 +241,6 @@ local function _cbc_dec(ciphertext, key, iv)
 end
 
 local function increment_iv(iv)
-    -- iv[0]++ then iv = MD5(iv)
     local b1 = ((iv:byte(1) + 1) & 0xFF)
     return md5(string.char(b1) .. iv:sub(2))
 end
