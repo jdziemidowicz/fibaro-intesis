@@ -43,14 +43,14 @@ function QuickApp:wakeUpDeadDevice()
   self:connect()
 end
 
--- To update controls you can use method self:updateView(<component ID>, <component property>, <desired value>). Eg:  
--- self:updateView("slider", "value", "55") 
--- self:updateView("button1", "text", "MUTE") 
--- self:updateView("label", "text", "TURNED ON") 
+-- To update controls you can use method self:updateView(<component ID>, <component property>, <desired value>). Eg:
+-- self:updateView("slider", "value", "55")
+-- self:updateView("button1", "text", "MUTE")
+-- self:updateView("label", "text", "TURNED ON")
 
--- This is QuickApp inital method. It is called right after your QuickApp starts (after each save or on gateway startup). 
+-- This is QuickApp inital method. It is called right after your QuickApp starts (after each save or on gateway startup).
 -- Here you can set some default values, setup http connection or get QuickApp variables.
--- To learn more, please visit: 
+-- To learn more, please visit:
 --    * https://manuals.fibaro.com/home-center-3/
 --    * https://manuals.fibaro.com/home-center-3-quick-apps/
 
@@ -59,6 +59,10 @@ local PING_EVERY_SEC       = 10
 local RECONNECT_SEC        = 30
 local WMP_PORT             = 3310
 
+local MAGIC_LOGIN = "\xAB\xCD\xEF\x55\xAA\xFE\xDC\xBA"
+local MAGIC_M0    = "\xFE\xA5\x1B\x1E\x01\x23\x45\x67"
+local MAGIC_M1    = "\x5A\xFE\xB0\xA7\xBE\xA1\xAF\xEA"
+
 function QuickApp:onInit()
   self:updateProperty("supportedThermostatModes", {"Cool", "Fan", "Dry", "Heat", "Auto", "Off"})
   self:updateProperty("coolingThermostatSetpointCapabilitiesMin", 18)
@@ -66,6 +70,7 @@ function QuickApp:onInit()
   self:updateProperty("coolingThermostatSetpointStep", {C = 1.0})
 
   self.ip = self:getVariable("IP")
+  self.pin = tonumber(self:getVariable("PIN"))
 
   self:connect()
 end
@@ -88,21 +93,44 @@ function QuickApp:connect()
       self.connected = true
 
       self:startReader()
-      self:startPinger()
 
       self:sendCommand("ID")
-      self:sendCommand("CFG:DATETIME," .. os.date("%d/%m/%Y %H:%M:%S"))
-      self:sendCommand("GET,1:MODE")
-      self:sendCommand("GET,1:SETPTEMP")
-      self:sendCommand("GET,1:VANEUD")
-      self:sendCommand("GET,1:FANSP")
-      self:sendCommand("GET,1:ONOFF")
     end,
     error = function(message)
       self:warning("TCP connect failed: " .. message)
       return self:scheduleReconnect()
     end
   })
+end
+
+function QuickApp:doLogin()
+  if self.securityLevel == 'A' and not self.pin then
+    self:error("PIN required")
+    self:resetState()
+    return
+  end
+
+  if self.pin then
+    self.encKey = derive_key(self.pin, tonumber(self.mac, 16))
+
+    self.r0 = random_bytes(8)
+    self:sendCommand("LOGIN:" .. bytes_to_hex(aes_ecb_encrypt(self.r0 .. MAGIC_LOGIN, self.encKey)))
+  else
+    self:fetchParameters()
+  end
+end
+
+function QuickApp:fetchParameters()
+  if self.securityLevel == 'N' or self.pin then
+    self:sendCommand("CFG:DATETIME," .. os.date("%d/%m/%Y %H:%M:%S"))
+  end
+  self:sendCommand("GET,1:MODE")
+  self:sendCommand("GET,1:SETPTEMP")
+  self:sendCommand("GET,1:VANEUD")
+  self:sendCommand("GET,1:FANSP")
+  self:sendCommand("GET,1:ONOFF")
+
+  self:startPinger()
 end
 
 function QuickApp:resetState()
@@ -129,6 +157,14 @@ function QuickApp:resetState()
   self.lastMode = "Cool"
   self.lastVane = "AUTO"
   self.lastFanSpeed = "AUTO"
+  self.mac = nil
+  self.encKey = nil
+  self.sessionKey = nil
+  self.r0 = nil
+  self.r1 = nil
+  self.r2 = nil
+  self.rxIv = nil
+  self.txIv = nil
 end
 
 function QuickApp:scheduleReconnect()
@@ -142,11 +178,35 @@ function QuickApp:scheduleReconnect()
 end
 
 function QuickApp:startReader()
+  self:readSomething(function (data)
+    self:handleIncoming(data)
+    self:startReader()
+  end)
+end
+
+function QuickApp:readSomething(callback)
+  if not self.socket then
+    return
+  end
+
   self.socket:readUntil("\r\n", {
     success = function(data)
+      if self.sessionKey then
+        data = unescape(data)
+        data = aes_cbc_decrypt(data, self.sessionKey, self.rxIv)
+        local num2 = tonumber(data:sub(1, 4))
+        data = data:sub(6, 5 + num2 - 2)
+      end
+
       self:debug("<-- " .. data)
-      self:handleIncoming(data)
-      self:startReader()
+
+      self.waitingForResponse = false
+      local payload = table.remove(self.queue, 1)
+      if payload then
+        self:sendCommand(payload)
+      end
+
+      callback(data)
     end,
     error = function(message)
       self:warning("Socket read error: " .. message)
@@ -196,6 +256,18 @@ function QuickApp:handleIncoming(data)
     self:updateProperty("thermostatMode", "Off")
   elseif data == "CHN,1:ONOFF,ON" then
     self:updateProperty("thermostatMode", self.lastMode)
+  elseif data == "OK" then
+    self.sessionKey = self.r1 .. self.r2
+    self.rxIv = { md5(self.r0) }
+    local r0Inc = {}
+    for i = 1, 8 do
+      r0Inc[i] = (self.r0:byte(i) + 1) & 0xFF
+    end
+    self.txIv = { md5(string.char(table.unpack(r0Inc))) }
+    self:fetchParameters()
+  elseif data == "ERR" then
+    self:error("invalid PIN")
+    self:resetState()
   elseif data:starts("CHN,1:VANEUD,") then
     local _, e = data:find("CHN,1:VANEUD,", 1, true)
     local mode = data:sub(e+1)
@@ -212,17 +284,34 @@ function QuickApp:handleIncoming(data)
     if temp ~= 32768 then
       self:updateProperty("coolingThermostatSetpoint", {value = temp // 10, unit = "C"})
     end
-  end
+  elseif data:starts("ID:") then
+    local fields = {}
+    for f in (data:sub(4) .. ","):gmatch("([^,]*),") do fields[#fields+1] = f end
 
-  self.waitingForResponse = false
-  local payload = table.remove(self.queue, 1)
-  if payload then
-    self:sendCommand(payload)
+    self.mac = fields[2]
+    self.securityLevel = fields[8]
+    self:doLogin()
+  elseif data:starts("M0:") then
+    local m0 = aes_ecb_decrypt(hex_to_bytes(data:sub(4)), self.encKey)
+    assert(m0:sub(9, 16) == MAGIC_M0, "M0 magic mismatch: " .. bytes_to_hex(m0:sub(9, 16)))
+    self.r1 = m0:sub(1, 8)
+    self.r2 = random_bytes(8)
+    self:sendCommand("M1:" .. bytes_to_hex(aes_ecb_encrypt(self.r2 .. MAGIC_M1, self.encKey)))
   end
 end
 
 function QuickApp:sendRaw(payload)
-  self.socket:write(payload .. "\r\n", {
+  local data = nil
+  if self.sessionKey then
+    local buf = payload .. "\n"
+    buf = ("%04d~"):format(#buf) .. buf
+    local cipher_out = aes_cbc_encrypt(buf, self.sessionKey, self.txIv)
+    data = escape(cipher_out, #cipher_out) .. "\r\n"
+  else
+    data = payload .. "\r\n"
+  end
+
+  self.socket:write(data, {
     success = function()
       self:debug("--> " .. payload)
       self.lastSendTime = os.time()
