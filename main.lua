@@ -177,6 +177,10 @@ function QuickApp:startReader()
 end
 
 function QuickApp:readSomething(callback)
+  if not self.socket then
+    return
+  end
+
   self.socket:readUntil("\r\n", {
     success = function(data)
       if self.sessionKey then
@@ -253,6 +257,9 @@ function QuickApp:handleIncoming(data)
     end
     self.txIv = { md5(string.char(table.unpack(r0Inc))) }
     self:fetchParameters()
+  elseif data == "ERR" then
+    self:error("invalid PIN")
+    self:resetState()
   elseif data:starts("CHN,1:VANEUD,") then
     local _, e = data:find("CHN,1:VANEUD,", 1, true)
     local mode = data:sub(e+1)
