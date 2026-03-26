@@ -104,6 +104,12 @@ function QuickApp:connect()
 end
 
 function QuickApp:doLogin()
+  if self.securityLevel == 'A' and not self.pin then
+    self:error("PIN required")
+    self:resetState()
+    return
+  end
+
   if self.pin then
     self.encKey = derive_key(self.pin, tonumber(self.mac, 16))
 
@@ -115,7 +121,9 @@ function QuickApp:doLogin()
 end
 
 function QuickApp:fetchParameters()
-  self:sendCommand("CFG:DATETIME," .. os.date("%d/%m/%Y %H:%M:%S"))
+  if self.securityLevel == 'N' or self.pin then
+    self:sendCommand("CFG:DATETIME," .. os.date("%d/%m/%Y %H:%M:%S"))
+  end
   self:sendCommand("GET,1:MODE")
   self:sendCommand("GET,1:SETPTEMP")
   self:sendCommand("GET,1:VANEUD")
@@ -277,8 +285,11 @@ function QuickApp:handleIncoming(data)
       self:updateProperty("coolingThermostatSetpoint", {value = temp // 10, unit = "C"})
     end
   elseif data:starts("ID:") then
-    local comma = data:find(",")
-    self.mac = data:sub(comma + 1, comma + 12)
+    local fields = {}
+    for f in (data:sub(4) .. ","):gmatch("([^,]*),") do fields[#fields+1] = f end
+
+    self.mac = fields[2]
+    self.securityLevel = fields[8]
     self:doLogin()
   elseif data:starts("M0:") then
     local m0 = aes_ecb_decrypt(hex_to_bytes(data:sub(4)), self.encKey)
