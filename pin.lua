@@ -39,9 +39,9 @@ function hex_to_bytes(h)
     return (h:gsub("..", function(hh) return string.char(tonumber(hh, 16)) end))
 end
 
-function random_bytes(n)
-    math.randomseed(os.time())
+math.randomseed(os.time())
 
+function random_bytes(n)
     local bytes = ""
     for i = 1, n do
         bytes = bytes .. string.char(math.random(0, 255))
