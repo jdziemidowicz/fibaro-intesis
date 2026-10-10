@@ -7,7 +7,7 @@ This is a from-scratch replacement for the IntesisAC QuickApp from the Fibaro Ma
 ## Improvements over the Marketplace QuickApp
 
 - **Persistent connection:** one TCP connection is kept open and reused, instead of a new connection for every command.
-- **Instant updates:** the gateway pushes state changes as they happen, instead of the QuickApp polling each setting in a 10–12 s cycle. Changes made with the IR remote or the Intesis app show up in Fibaro immediately.
+- **Instant updates:** the gateway pushes state changes as they happen, instead of the QuickApp polling each setting in a 10–12 s cycle. Changes made with the IR remote show up in Fibaro immediately.
 - **Security support:** works with the gateway's security level `ALL`, using PIN login and an AES-128 encrypted session.
 - **Proper offline handling:** the device is marked dead in Fibaro when the gateway is unreachable and reconnects automatically.
 - **Gateway clock sync:** the gateway's date and time are set from the HC3 on every connect.
